@@ -62,6 +62,7 @@ public class Reception extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new Room();
+                exportToTextFile("select * from room", "rooms_details.txt");
             }
         });
 
@@ -95,6 +96,7 @@ public class Reception extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new All_Patient_Info();
+                exportToTextFile("select * from patient_info", "patients_details.txt");
             }
         });
 
@@ -181,6 +183,38 @@ public class Reception extends JFrame {
         setLayout(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
+    }
+
+    private void exportToTextFile(String query, String fileName) {
+        try {
+            conn c = new conn();
+            java.sql.ResultSet rs = c.statement.executeQuery(query);
+            java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+            int columnCount = rsmd.getColumnCount();
+
+            java.io.FileWriter writer = new java.io.FileWriter(fileName);
+            // Write Header
+            for (int i = 1; i <= columnCount; i++) {
+                writer.write(String.format("%-20s", rsmd.getColumnName(i)));
+            }
+            writer.write("\n");
+            writer.write("----------------------------------------------------------------------------------------------------\n");
+
+            // Write Data
+            while (rs.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    String value = rs.getString(i);
+                    if (value == null) value = "null";
+                    writer.write(String.format("%-20s", value));
+                }
+                writer.write("\n");
+            }
+            writer.close();
+            JOptionPane.showMessageDialog(this, "Data successfully exported to " + fileName);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error exporting data: " + ex.getMessage());
+        }
     }
 
     public static void main(String[] args) {
