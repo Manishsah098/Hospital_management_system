@@ -186,35 +186,48 @@ public class Reception extends JFrame {
     }
 
     private void exportToTextFile(String query, String fileName) {
-        try {
-            conn c = new conn();
-            java.sql.ResultSet rs = c.statement.executeQuery(query);
-            java.sql.ResultSetMetaData rsmd = rs.getMetaData();
-            int columnCount = rsmd.getColumnCount();
+        new Thread(() -> {
+            try {
+                conn c = new conn();
+                if (c.statement == null) {
+                    SwingUtilities.invokeLater(() -> 
+                        JOptionPane.showMessageDialog(this, "Database connection failed. Please check your MySQL server and credentials.")
+                    );
+                    return;
+                }
+                
+                java.sql.ResultSet rs = c.statement.executeQuery(query);
+                java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+                int columnCount = rsmd.getColumnCount();
 
-            java.io.FileWriter writer = new java.io.FileWriter(fileName);
-            // Write Header
-            for (int i = 1; i <= columnCount; i++) {
-                writer.write(String.format("%-20s", rsmd.getColumnName(i)));
-            }
-            writer.write("\n");
-            writer.write("----------------------------------------------------------------------------------------------------\n");
-
-            // Write Data
-            while (rs.next()) {
+                java.io.FileWriter writer = new java.io.FileWriter(fileName);
+                // Write Header
                 for (int i = 1; i <= columnCount; i++) {
-                    String value = rs.getString(i);
-                    if (value == null) value = "null";
-                    writer.write(String.format("%-20s", value));
+                    writer.write(String.format("%-20s", rsmd.getColumnName(i)));
                 }
                 writer.write("\n");
+                writer.write("----------------------------------------------------------------------------------------------------\n");
+
+                // Write Data
+                while (rs.next()) {
+                    for (int i = 1; i <= columnCount; i++) {
+                        String value = rs.getString(i);
+                        if (value == null) value = "null";
+                        writer.write(String.format("%-20s", value));
+                    }
+                    writer.write("\n");
+                }
+                writer.close();
+                SwingUtilities.invokeLater(() -> 
+                    JOptionPane.showMessageDialog(this, "Data successfully exported to " + fileName)
+                );
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> 
+                    JOptionPane.showMessageDialog(this, "Error exporting data: " + (ex.getMessage() != null ? ex.getMessage() : ex.toString()))
+                );
             }
-            writer.close();
-            JOptionPane.showMessageDialog(this, "Data successfully exported to " + fileName);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error exporting data: " + ex.getMessage());
-        }
+        }).start();
     }
 
     public static void main(String[] args) {
